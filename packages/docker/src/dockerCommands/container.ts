@@ -9,7 +9,11 @@ import {
 import * as path from 'path'
 import { env } from 'process'
 import { v4 as uuidv4 } from 'uuid'
-import { runDockerCommand, RunDockerCommandOptions } from '../utils'
+import {
+  runDockerCommand,
+  RunDockerCommandOptions,
+  processGpuOptions
+} from '../utils'
 import { getRunnerLabel } from './constants'
 
 export async function createContainer(
@@ -38,7 +42,10 @@ export async function createContainer(
     }
   }
   if (args.createOptions) {
-    dockerArgs.push(...args.createOptions.split(' '))
+    const processedOptions = processGpuOptions(args.createOptions)
+    if (processedOptions) {
+      dockerArgs.push(...processedOptions.split(' '))
+    }
   }
 
   if (args.environmentVariables) {
@@ -406,7 +413,10 @@ export async function containerRun(
   }
 
   if (args.createOptions) {
-    dockerArgs.push(...args.createOptions.split(' '))
+    const processedOptions = processGpuOptions(args.createOptions)
+    if (processedOptions) {
+      dockerArgs.push(...processedOptions.split(' '))
+    }
   }
   if (args.environmentVariables) {
     for (const [key] of Object.entries(args.environmentVariables)) {

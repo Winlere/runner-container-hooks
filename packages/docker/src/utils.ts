@@ -107,3 +107,44 @@ function isAlpha(val: string): boolean {
 function isNumeric(val: string): boolean {
   return val.length === 1 && val >= '0' && val <= '9'
 }
+
+/**
+ * Process createOptions to handle GPU allocation.
+ * Replaces '--gpus runner_decide' with '--gpus $RUNNER_VISIBLE_DEVICES'
+ * where RUNNER_VISIBLE_DEVICES is resolved from the environment.
+ */
+export function processGpuOptions(createOptions: string): string {
+  if (!createOptions) {
+    return createOptions
+  }
+
+  // Pattern to match --gpus runner_decide (with various quoting styles)
+  // Handles: --gpus runner_decide, --gpus=runner_decide, --gpus "runner_decide", etc.
+  const gpuPattern = /(--gpus[=\s]+)(['"]?)runner_decide\2/g
+
+  if (!gpuPattern.test(createOptions)) {
+    return createOptions
+  }
+
+  const runnerVisibleDevices = env.RUNNER_VISIBLE_DEVICES
+
+  if (!runnerVisibleDevices) {
+    core.warning(
+      'Hook: Found --gpus runner_decide but RUNNER_VISIBLE_DEVICES is not set. GPU allocation will be skipped.'
+    )
+    // Remove the --gpus runner_decide option entirely if env var is not set
+    // Need to recreate the pattern since test() consumes it
+    return createOptions
+      .replace(/(--gpus[=\s]+)(['"]?)runner_decide\2/g, '')
+      .trim()
+  }
+
+  core.info(
+    `Hook: Replacing --gpus runner_decide with --gpus ${runnerVisibleDevices}`
+  )
+  // Need to recreate the pattern since test() consumes it
+  return createOptions.replace(
+    /(--gpus[=\s]+)(['"]?)runner_decide\2/g,
+    `$1"${runnerVisibleDevices}"`
+  )
+}
