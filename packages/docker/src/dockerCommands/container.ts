@@ -11,6 +11,7 @@ import { env } from 'process'
 import { v4 as uuidv4 } from 'uuid'
 import {
   runDockerCommand,
+  runDockerPruneCommand,
   RunDockerCommandOptions,
   processGpuOptions
 } from '../utils'
@@ -222,7 +223,7 @@ export async function containerNetworkPrune(): Promise<void> {
     `label=${getRunnerLabel()}`
   ]
 
-  await runDockerCommand(dockerArgs)
+  await runDockerPruneCommand(dockerArgs)
 }
 
 export async function containerPrune(): Promise<void> {

@@ -1,4 +1,4 @@
-import { runDockerCommand } from '../utils'
+import { runDockerCommand, runDockerPruneCommand } from '../utils'
 import { getRunnerLabel } from './constants'
 
 export async function networkCreate(networkName): Promise<void> {
@@ -22,5 +22,5 @@ export async function networkPrune(): Promise<void> {
   dockerArgs.push('--force')
   dockerArgs.push(`--filter`)
   dockerArgs.push(`label=${getRunnerLabel()}`)
-  await runDockerCommand(dockerArgs)
+  await runDockerPruneCommand(dockerArgs)
 }

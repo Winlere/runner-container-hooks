@@ -26,6 +26,36 @@ export async function runDockerCommand(
   return Promise.resolve(pipes.stdout)
 }
 
+const PRUNE_LOCK_TIMEOUT_SECONDS = 300
+
+function getPruneLockFile(): string {
+  const uid = process.getuid ? process.getuid() : 'unknown'
+  return `/tmp/docker-prune-${uid}.lock`
+}
+
+export async function runDockerPruneCommand(
+  args: string[],
+  options?: RunDockerCommandOptions
+): Promise<string> {
+  options = optionsWithDockerEnvs(options)
+  const dockerArgs = fixArgs(args)
+  // Wrap prune with flock to prevent "Another prune is in process" errors
+  // when multiple runners call docker prune concurrently.
+  const flockArgs = [
+    '-w',
+    String(PRUNE_LOCK_TIMEOUT_SECONDS),
+    getPruneLockFile(),
+    'docker',
+    ...dockerArgs
+  ]
+  const pipes = await exec.getExecOutput('flock', flockArgs, options)
+  if (pipes.exitCode !== 0) {
+    core.error(`Docker failed with exit code ${pipes.exitCode}`)
+    return Promise.reject(pipes.stderr)
+  }
+  return Promise.resolve(pipes.stdout)
+}
+
 export function optionsWithDockerEnvs(
   options?: RunDockerCommandOptions
 ): RunDockerCommandOptions | undefined {
