@@ -26,26 +26,18 @@ export async function createContainer(
     throw new Error('Image was expected')
   }
 
-  // Service containers need the runner-provided user-defined network + alias.
-  // Job container should use host networking to expose host network stack.
-  const isService = Boolean((args as ServiceContainerInfo)?.contextName)
-  const effectiveNetwork = isService ? network : 'host'
-
   const dockerArgs: string[] = ['create']
   dockerArgs.push(`--label=${getRunnerLabel()}`)
-
-  // Ensure we pass exactly one network mode.
-  dockerArgs.push(`--network=${effectiveNetwork}`)
-  if (isService) {
+  dockerArgs.push(`--network=${network}`)
+  if ((args as ServiceContainerInfo)?.contextName) {
     dockerArgs.push(
-      `--network-alias=${(args as ServiceContainerInfo).contextName}`
+      `--network-alias=${(args as ServiceContainerInfo)?.contextName}`
     )
   }
 
   dockerArgs.push('--name', name)
 
-  // Port publishing is not applicable with --network=host.
-  if (args?.portMappings?.length && effectiveNetwork !== 'host') {
+  if (args?.portMappings?.length) {
     for (const portMapping of args.portMappings) {
       dockerArgs.push('-p', portMapping)
     }
@@ -99,11 +91,13 @@ export async function createContainer(
     throw new Error('Could not read id from docker command')
   }
   const response: ContainerMetadata = { id, image: args.image }
-  response.network = effectiveNetwork
+  if (network) {
+    response.network = network
+  }
   response.ports = []
 
-  if (isService) {
-    response.contextName = (args as ServiceContainerInfo).contextName
+  if ((args as ServiceContainerInfo).contextName) {
+    response['contextName'] = (args as ServiceContainerInfo).contextName
   }
   return response
 }
