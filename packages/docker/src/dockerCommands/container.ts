@@ -56,6 +56,10 @@ export async function createContainer(
   }
 
   dockerArgs.push('-e', 'GITHUB_ACTIONS=true')
+  if (env.PIP_CACHE_DIR) {
+    dockerArgs.push('-e', 'PIP_CACHE_DIR=/opt/pip_cache')
+    dockerArgs.push('-e', 'UV_CACHE_DIR=/opt/pip_cache')
+  }
   // Use same behavior as the runner https://github.com/actions/runner/blob/27d9c886ab9a45e0013cb462529ac85d581f8c41/src/Runner.Worker/Container/DockerCommandManager.cs#L150
   if (!('CI' in (args.environmentVariables ?? {}))) {
     dockerArgs.push('-e', 'CI=true')
@@ -65,6 +69,9 @@ export async function createContainer(
     ...(args.userMountVolumes || []),
     ...(args.systemMountVolumes || [])
   ]
+  if (env.PIP_CACHE_DIR) {
+    dockerArgs.push(`-v=${env.PIP_CACHE_DIR}:/opt/pip_cache`)
+  }
   for (const mountVolume of mountVolumes) {
     dockerArgs.push(
       `-v=${mountVolume.sourceVolumePath}:${mountVolume.targetVolumePath}${
@@ -374,6 +381,10 @@ export async function containerExecStep(
     dockerArgs.push('-e')
     dockerArgs.push(key)
   }
+  if (env.PIP_CACHE_DIR) {
+    dockerArgs.push('-e', 'PIP_CACHE_DIR=/opt/pip_cache')
+    dockerArgs.push('-e', 'UV_CACHE_DIR=/opt/pip_cache')
+  }
 
   if (args.prependPath?.length) {
     // TODO: remove compatibility with typeof prependPath === 'string' as we bump to next major version, the hooks will lose PrependPath compat with runners 2.293.0 and older
@@ -426,6 +437,10 @@ export async function containerRun(
   }
 
   dockerArgs.push('-e', 'GITHUB_ACTIONS=true')
+  if (env.PIP_CACHE_DIR) {
+    dockerArgs.push('-e', 'PIP_CACHE_DIR=/opt/pip_cache')
+    dockerArgs.push('-e', 'UV_CACHE_DIR=/opt/pip_cache')
+  }
   // Use same behavior as the runner https://github.com/actions/runner/blob/27d9c886ab9a45e0013cb462529ac85d581f8c41/src/Runner.Worker/Container/DockerCommandManager.cs#L150
   if (!('CI' in (args.environmentVariables ?? {}))) {
     dockerArgs.push('-e', 'CI=true')
@@ -435,6 +450,9 @@ export async function containerRun(
     ...(args.userMountVolumes || []),
     ...(args.systemMountVolumes || [])
   ]
+  if (env.PIP_CACHE_DIR) {
+    dockerArgs.push('-v', `${env.PIP_CACHE_DIR}:/opt/pip_cache`)
+  }
   for (const mountVolume of mountVolumes) {
     dockerArgs.push(`-v`)
     dockerArgs.push(
